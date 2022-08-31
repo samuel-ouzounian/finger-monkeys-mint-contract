@@ -2750,7 +2750,7 @@ contract FingerMonkeys is
 
     //Checks if sender is member
 
-    function isEbisusBayMember(address _address) private view returns (bool) {
+    function isEbisusBayMember(address _address) public view returns (bool) {
         return Market(marketAddress).isMember(_address);
     }
 
@@ -2788,42 +2788,6 @@ contract FingerMonkeys is
             uint256 id = nextToken();
             _safeMint(_to, id);
         }
-    }
-
-    function setPaymentShares(
-        address[] calldata _newPayees,
-        uint16[] calldata _newShares
-    ) external onlyOwner {
-        require(_newPayees.length != 0, "empty payees");
-        require(_newPayees.length == _newShares.length, "wrong payee numbers");
-
-        if (!isCorrectShares(_newShares)) {
-            revert("invalid shares");
-        }
-        payees = _newPayees;
-        shares = _newShares;
-    }
-
-    function getPayees() public view returns (address[] memory) {
-        return payees;
-    }
-
-    function getShares() public view returns (uint16[] memory) {
-        return shares;
-    }
-
-    function isCorrectShares(uint16[] memory _shares)
-        private
-        pure
-        returns (bool)
-    {
-        uint256 len = _shares.length;
-        uint256 totalFees;
-        for (uint256 i = 0; i < len; i++) {
-            totalFees += _shares[i];
-        }
-
-        return totalFees == 10000;
     }
 
     function setMemCost(uint256 _newCost) public onlyOwner {
