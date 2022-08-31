@@ -2614,8 +2614,9 @@ contract FingerMonkeys is
     using SafePct for uint256;
     using SafeMathLite for uint256;
     using Strings for uint256;
-    address marketAddress = 0x72af9c869A4759e6D50E9656C0741b395532C3Dd;
-    address public ownerAddress = 0x194d51cc109bFB17887cd7731cf967cA27ed2e21;
+    address public marketAddress;
+    address public ownerAddress;
+    address public ebisusPayout;
     string public baseURI;
     string public baseExtension = ".json";
     string public notRevealedUri;
@@ -2626,6 +2627,8 @@ contract FingerMonkeys is
     uint256 public maxMintAmount = 5;
     uint256 public nftPerAddressLimit = 5555;
     uint256 public nftPerWhitelistAddress = 5;
+    uint256 internal fee = 1000;
+    uint256 internal scale = 10000;
     address[] private payees;
     uint16[] private shares;
     bool public paused = true;
@@ -2636,9 +2639,15 @@ contract FingerMonkeys is
     constructor(
         string memory _name,
         string memory _symbol,
-        string memory _initBaseURI
+        string memory _initBaseURI,
+        address _ownerAddress,
+        address _marketAddress,
+        address _ebisusPayout
     ) RandomlyAssigned(5555, 1) ERC721(_name, _symbol) {
         setBaseURI(_initBaseURI);
+        ownerAddress = _ownerAddress;
+        marketAddress = _marketAddress;
+        ebisusPayout = _ebisusPayout;
     }
 
     // internal
@@ -2670,18 +2679,14 @@ contract FingerMonkeys is
             }
             require(msg.value >= total, "insufficient funds");
         }
-
+        Market market = Market(marketAddress);
+        uint256 amount;
+        amount = total.mulDiv(fee, scale);
+        market.addToEscrow{value: amount}(ebisusPayout);
         for (uint256 i = 1; i <= _mintAmount; i++) {
             addressMintedBalance[msg.sender]++;
             uint256 id = nextToken();
             _safeMint(msg.sender, id);
-        }
-        Market market = Market(marketAddress);
-        uint256 len = payees.length;
-        uint256 amount;
-        for (uint256 i = 0; i < len; i++) {
-            amount = total.mulDiv(shares[i], 10000);
-            market.addToEscrow{value: amount}(payees[i]);
         }
     }
 
@@ -2778,11 +2783,7 @@ contract FingerMonkeys is
         ownerAddress = _ownerAddress;
     }
 
-    function reserveMint(uint256 _mintAmount, address _to)
-        public
-        payable
-        onlyOwner
-    {
+    function reserveMint(uint256 _mintAmount, address _to) public onlyOwner {
         for (uint256 i = 1; i <= _mintAmount; i++) {
             addressMintedBalance[msg.sender]++;
             uint256 id = nextToken();
