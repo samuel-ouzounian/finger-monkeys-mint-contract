@@ -2608,7 +2608,6 @@ contract FingerMonkeys is
     ERC721Enumerable,
     Ownable,
     IDrop,
-    PullPayment,
     RandomlyAssigned
 {
     using SafePct for uint256;
