@@ -2604,12 +2604,7 @@ interface IDrop {
     function getInfo() external view returns (Info memory);
 }
 
-contract FingerMonkeys is
-    ERC721Enumerable,
-    Ownable,
-    IDrop,
-    RandomlyAssigned
-{
+contract FingerMonkeys is ERC721Enumerable, Ownable, IDrop, RandomlyAssigned {
     using SafePct for uint256;
     using SafeMathLite for uint256;
     using Strings for uint256;
@@ -2618,7 +2613,6 @@ contract FingerMonkeys is
     address public ebisusPayout;
     string public baseURI;
     string public baseExtension = ".json";
-    string public notRevealedUri;
     uint256 public regCost = 195 ether;
     uint256 public memCost = 160 ether;
     uint256 public whiteCost = 100 ether;
@@ -2631,9 +2625,7 @@ contract FingerMonkeys is
     address[] private payees;
     uint16[] private shares;
     bool public paused = true;
-    bool public revealed = true;
     mapping(address => bool) private whitelistedAddresses;
-    mapping(address => uint256) public addressMintedBalance;
 
     constructor(
         string memory _name,
@@ -2668,11 +2660,6 @@ contract FingerMonkeys is
         require(supply + _mintAmount <= maxTokens, "max NFT limit exceeded");
 
         if (msg.sender != owner()) {
-            uint256 ownerMintedCount = addressMintedBalance[msg.sender];
-            require(
-                ownerMintedCount + _mintAmount <= nftPerAddressLimit,
-                "max NFT per address exceeded"
-            );
             for (uint256 i = 1; i <= _mintAmount; i++) {
                 total += mintCost(msg.sender);
             }
@@ -2683,7 +2670,6 @@ contract FingerMonkeys is
         amount = total.mulDiv(fee, scale);
         market.addToEscrow{value: amount}(ebisusPayout);
         for (uint256 i = 1; i <= _mintAmount; i++) {
-            addressMintedBalance[msg.sender]++;
             uint256 id = nextToken();
             _safeMint(msg.sender, id);
         }
@@ -2717,10 +2703,6 @@ contract FingerMonkeys is
             _exists(tokenId),
             "ERC721Metadata: URI query for nonexistent token"
         );
-
-        if (revealed == false) {
-            return notRevealedUri;
-        }
 
         string memory currentBaseURI = _baseURI();
         return
@@ -2784,7 +2766,6 @@ contract FingerMonkeys is
 
     function reserveMint(uint256 _mintAmount, address _to) public onlyOwner {
         for (uint256 i = 1; i <= _mintAmount; i++) {
-            addressMintedBalance[msg.sender]++;
             uint256 id = nextToken();
             _safeMint(_to, id);
         }
@@ -2819,10 +2800,6 @@ contract FingerMonkeys is
         for (uint256 i = 0; i < len; i++) {
             whitelistedAddresses[_addresses[i]] = true;
         }
-    }
-
-    function addWhiteListAddress(address _address) public onlyOwner {
-        whitelistedAddresses[_address] = true;
     }
 
     function removeWhiteList(address _address) public onlyOwner {
